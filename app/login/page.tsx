@@ -1,11 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -35,8 +33,8 @@ export default function LoginPage() {
       }
 
       // ✅ Login successful, cookies are set automatically
-      // Redirect to dashboard
-      router.push('/dashboard')
+      // Use a full navigation so the auth provider re-runs with the new cookie
+      window.location.assign('/dashboard')
     } catch (err) {
       console.error('[Login] Error:', err)
       setError('Network error. Please try again.')
@@ -46,7 +44,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-bg-deep via-bg-deep to-bg-elevated flex items-center justify-center px-4">
+    <div className="min-h-screen bg-linear-to-br from-bg-deep via-bg-deep to-bg-elevated flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo/Header */}
         <div className="text-center mb-8">

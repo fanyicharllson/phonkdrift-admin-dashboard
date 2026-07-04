@@ -11,14 +11,14 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const { adminToken, isLoading } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
 
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!isLoading && !adminToken) {
+    if (!isLoading && !isAuthenticated) {
       router.push('/login')
     }
-  }, [adminToken, isLoading, router])
+  }, [isAuthenticated, isLoading, router])
 
   if (isLoading) {
     return (
@@ -31,7 +31,7 @@ export default function DashboardLayout({
     )
   }
 
-  if (!adminToken) {
+  if (!isAuthenticated) {
     return null
   }
 

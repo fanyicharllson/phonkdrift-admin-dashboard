@@ -1,28 +1,27 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { Header } from '@/components/header'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { trackDB } from '@/lib/supabase/clients'
 import { Track, getTrackStatus } from '@/lib/types'
-import { useAuth } from '@/lib/auth-context'
 import { seedTrack, approveTrack, rejectTrack, featureTrack, deleteTrack } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Plus, Check, X, Star, Trash2 } from 'lucide-react'
+import { Plus, Check, X, Star, Trash2, Loader2 } from 'lucide-react'
+
+const EMPTY_FORM = { youtubeUrl: '', title: '', artist: '', genre: '', thumbnailUrl: '' }
 
 export default function TracksPage() {
-  const { adminToken } = useAuth()
   const [tracks, setTracks] = useState<Track[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [rowLoading, setRowLoading] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [modalLoading, setModalLoading] = useState(false)
   const [modalError, setModalError] = useState('')
-  const [formData, setFormData] = useState({
-    youtubeUrl: '',
-    title: '',
-    artist: '',
-    genre: '',
-    thumbnailUrl: '',
-  })
+  const [formData, setFormData] = useState(EMPTY_FORM)
+  const [deleteTarget, setDeleteTarget] = useState<Track | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   useEffect(() => {
     fetchTracks()
@@ -39,14 +38,21 @@ export default function TracksPage() {
       setTracks(data || [])
     } catch (error) {
       console.error('Failed to fetch tracks:', error)
+      toast.error('Failed to load tracks. Please refresh the page.')
     } finally {
       setIsLoading(false)
     }
   }
 
+  const closeModal = () => {
+    if (modalLoading) return
+    setShowModal(false)
+    setModalError('')
+    setFormData(EMPTY_FORM)
+  }
+
   const handleAddTrack = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!adminToken) return
 
     setModalError('')
     setModalLoading(true)
@@ -57,59 +63,77 @@ export default function TracksPage() {
         formData.title,
         formData.artist,
         formData.genre,
-        formData.thumbnailUrl,
-        adminToken
+        formData.thumbnailUrl
       )
 
       setShowModal(false)
-      setFormData({ youtubeUrl: '', title: '', artist: '', genre: '', thumbnailUrl: '' })
-      // Refresh tracks
+      setFormData(EMPTY_FORM)
+      toast.success(`"${formData.title}" was added and is pending approval`)
       await fetchTracks()
     } catch (error) {
-      setModalError('Failed to add track. Please try again.')
+      const message = error instanceof Error ? error.message : 'Failed to add track. Please try again.'
+      setModalError(message)
       console.error(error)
     } finally {
       setModalLoading(false)
     }
   }
 
-  const handleApprove = async (trackId: string) => {
-    if (!adminToken) return
+  const handleApprove = async (track: Track) => {
+    setRowLoading(track.id)
     try {
-      await approveTrack(trackId, adminToken)
+      await approveTrack(track.id)
+      toast.success(`"${track.title}" approved`)
       await fetchTracks()
     } catch (error) {
       console.error('Failed to approve track:', error)
+      toast.error(`Failed to approve "${track.title}"`)
+    } finally {
+      setRowLoading(null)
     }
   }
 
-  const handleReject = async (trackId: string) => {
-    if (!adminToken) return
+  const handleReject = async (track: Track) => {
+    setRowLoading(track.id)
     try {
-      await rejectTrack(trackId, adminToken)
+      await rejectTrack(track.id)
+      toast.success(`"${track.title}" rejected`)
       await fetchTracks()
     } catch (error) {
       console.error('Failed to reject track:', error)
+      toast.error(`Failed to reject "${track.title}"`)
+    } finally {
+      setRowLoading(null)
     }
   }
 
-  const handleFeature = async (trackId: string) => {
-    if (!adminToken) return
+  const handleFeature = async (track: Track) => {
+    setRowLoading(track.id)
     try {
-      await featureTrack(trackId, adminToken)
+      await featureTrack(track.id)
+      toast.success(track.is_featured ? `"${track.title}" unfeatured` : `"${track.title}" is now featured`)
       await fetchTracks()
     } catch (error) {
       console.error('Failed to feature track:', error)
+      toast.error(`Failed to update "${track.title}"`)
+    } finally {
+      setRowLoading(null)
     }
   }
 
-  const handleDelete = async (trackId: string) => {
-    if (!adminToken || !confirm('Are you sure you want to delete this track?')) return
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleteLoading(true)
     try {
-      await deleteTrack(trackId, adminToken)
+      await deleteTrack(deleteTarget.id)
+      toast.success(`"${deleteTarget.title}" deleted`)
+      setDeleteTarget(null)
       await fetchTracks()
     } catch (error) {
       console.error('Failed to delete track:', error)
+      toast.error(`Failed to delete "${deleteTarget.title}"`)
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -158,6 +182,7 @@ export default function TracksPage() {
                 <tbody>
                   {tracks.map((track) => {
                     const status = getTrackStatus(track)
+                    const isRowBusy = rowLoading === track.id
                     return (
                       <tr key={track.id} className="border-b border-border-subtle hover:bg-bg-surface/50 transition-colors">
                         <td className="px-6 py-4">
@@ -197,44 +222,54 @@ export default function TracksPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex gap-2 justify-center">
-                            {status === 'pending' && (
+                            {isRowBusy ? (
+                              <Loader2 className="w-4 h-4 text-text-secondary animate-spin" />
+                            ) : (
                               <>
+                                {status === 'pending' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleApprove(track)}
+                                      disabled={isRowBusy}
+                                      className="p-2 hover:bg-success/20 rounded transition-colors text-success disabled:opacity-50"
+                                      title="Approve"
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleReject(track)}
+                                      disabled={isRowBusy}
+                                      className="p-2 hover:bg-error/20 rounded transition-colors text-error disabled:opacity-50"
+                                      title="Reject"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                )}
+                                {status === 'live' && (
+                                  <button
+                                    onClick={() => handleFeature(track)}
+                                    disabled={isRowBusy}
+                                    className={`p-2 rounded transition-colors disabled:opacity-50 ${
+                                      track.is_featured
+                                        ? 'bg-phonk-red/20 text-phonk-red'
+                                        : 'hover:bg-phonk-red/20 text-text-secondary'
+                                    }`}
+                                    title="Toggle Featured"
+                                  >
+                                    <Star className={`w-4 h-4 ${track.is_featured ? 'fill-current' : ''}`} />
+                                  </button>
+                                )}
                                 <button
-                                  onClick={() => handleApprove(track.id)}
-                                  className="p-2 hover:bg-success/20 rounded transition-colors text-success"
-                                  title="Approve"
+                                  onClick={() => setDeleteTarget(track)}
+                                  disabled={isRowBusy}
+                                  className="p-2 hover:bg-error/20 rounded transition-colors text-error disabled:opacity-50"
+                                  title="Delete"
                                 >
-                                  <Check className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleReject(track.id)}
-                                  className="p-2 hover:bg-error/20 rounded transition-colors text-error"
-                                  title="Reject"
-                                >
-                                  <X className="w-4 h-4" />
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
                               </>
                             )}
-                            {status === 'live' && (
-                              <button
-                                onClick={() => handleFeature(track.id)}
-                                className={`p-2 rounded transition-colors ${
-                                  track.is_featured
-                                    ? 'bg-phonk-red/20 text-phonk-red'
-                                    : 'hover:bg-phonk-red/20 text-text-secondary'
-                                }`}
-                                title="Toggle Featured"
-                              >
-                                <Star className={`w-4 h-4 ${track.is_featured ? 'fill-current' : ''}`} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleDelete(track.id)}
-                              className="p-2 hover:bg-error/20 rounded transition-colors text-error"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
                           </div>
                         </td>
                       </tr>
@@ -249,8 +284,14 @@ export default function TracksPage() {
 
       {/* YouTube URL Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-bg-card border border-border-subtle rounded-lg p-6 w-full max-w-md">
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-bg-card border border-border-subtle rounded-lg p-6 w-full max-w-md shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-bold text-text-primary mb-4">Add Track by YouTube URL</h2>
 
             {modalError && (
@@ -267,9 +308,10 @@ export default function TracksPage() {
                   value={formData.youtubeUrl}
                   onChange={(e) => setFormData({ ...formData, youtubeUrl: e.target.value })}
                   placeholder="https://youtube.com/watch?v=..."
-                  className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red"
+                  className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red disabled:opacity-50"
                   required
                   disabled={modalLoading}
+                  autoFocus
                 />
               </div>
 
@@ -280,7 +322,7 @@ export default function TracksPage() {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="Track title"
-                  className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red"
+                  className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red disabled:opacity-50"
                   required
                   disabled={modalLoading}
                 />
@@ -294,7 +336,7 @@ export default function TracksPage() {
                     value={formData.artist}
                     onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
                     placeholder="Artist name"
-                    className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red"
+                    className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red disabled:opacity-50"
                     required
                     disabled={modalLoading}
                   />
@@ -306,7 +348,7 @@ export default function TracksPage() {
                     value={formData.genre}
                     onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
                     placeholder="Genre"
-                    className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red"
+                    className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red disabled:opacity-50"
                     required
                     disabled={modalLoading}
                   />
@@ -320,7 +362,7 @@ export default function TracksPage() {
                   value={formData.thumbnailUrl}
                   onChange={(e) => setFormData({ ...formData, thumbnailUrl: e.target.value })}
                   placeholder="https://..."
-                  className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red"
+                  className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red disabled:opacity-50"
                   required
                   disabled={modalLoading}
                 />
@@ -329,7 +371,7 @@ export default function TracksPage() {
               <div className="flex gap-3 pt-4">
                 <Button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={closeModal}
                   disabled={modalLoading}
                   className="flex-1 px-4 py-2 bg-bg-surface hover:bg-bg-elevated text-text-primary rounded-lg transition-colors"
                 >
@@ -338,15 +380,26 @@ export default function TracksPage() {
                 <Button
                   type="submit"
                   disabled={modalLoading}
-                  className="flex-1 px-4 py-2 bg-phonk-red hover:bg-phonk-red-dark text-text-primary rounded-lg transition-colors"
+                  className="flex-1 px-4 py-2 bg-phonk-red hover:bg-phonk-red-dark text-text-primary rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {modalLoading ? 'Processing...' : 'Add Track'}
+                  {modalLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {modalLoading ? 'Adding track...' : 'Add Track'}
                 </Button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete this track?"
+        description={`"${deleteTarget?.title}" will be permanently removed. This cannot be undone.`}
+        confirmLabel="Delete Track"
+        isLoading={deleteLoading}
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }

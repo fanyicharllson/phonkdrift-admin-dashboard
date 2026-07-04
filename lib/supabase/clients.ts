@@ -13,7 +13,7 @@ export const trackDB = createClient(
 )
 
 // Chat DB - chat rooms, messages
-export const chatDB = createClient(
-  process.env.NEXT_PUBLIC_CHAT_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_CHAT_SUPABASE_ANON_KEY!
-)
+// export const chatDB = createClient(
+//   process.env.NEXT_PUBLIC_CHAT_SUPABASE_URL!,
+//   process.env.NEXT_PUBLIC_CHAT_SUPABASE_ANON_KEY!
+// )

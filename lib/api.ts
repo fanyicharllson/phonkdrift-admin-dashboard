@@ -64,8 +64,10 @@ export async function deleteTrack(trackId: string) {
 }
 
 // User API calls
-export async function banUser(userId: string) {
-  return callApi(`/api/v1/admin/users/${userId}/ban`, 'POST')
+export async function banUser(userId: string, reason?: string) {
+  return callApi(`/api/v1/admin/users/${userId}/ban`, 'POST', {
+    body: reason ? { reason } : undefined,
+  })
 }
 
 export async function unbanUser(userId: string) {

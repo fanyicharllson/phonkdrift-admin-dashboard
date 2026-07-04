@@ -11,10 +11,10 @@ export function Sidebar() {
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-    { href: '/tracks', label: 'Tracks', icon: Music },
-    { href: '/users', label: 'Users', icon: Users },
-    { href: '/notifications', label: 'Notifications', icon: Bell },
-    { href: '/analytics', label: 'Analytics', icon: TrendingUp },
+    { href: '/dashboard/tracks', label: 'Tracks', icon: Music },
+    { href: '/dashboard/users', label: 'Users', icon: Users },
+    { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
+    { href: '/dashboard/analytics', label: 'Analytics', icon: TrendingUp },
   ]
 
   return (

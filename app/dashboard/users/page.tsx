@@ -1,18 +1,19 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { Header } from '@/components/header'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { authDB } from '@/lib/supabase/clients'
 import { User } from '@/lib/types'
-import { useAuth } from '@/lib/auth-context'
 import { banUser, unbanUser } from '@/lib/api'
 import { Ban, RotateCcw } from 'lucide-react'
 
 export default function UsersPage() {
-  const { adminToken } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [pendingAction, setPendingAction] = useState<{ user: User; type: 'ban' | 'unban' } | null>(null)
 
   useEffect(() => {
     fetchUsers()
@@ -29,32 +30,30 @@ export default function UsersPage() {
       setUsers(data || [])
     } catch (error) {
       console.error('Failed to fetch users:', error)
+      toast.error('Failed to load users. Please refresh the page.')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleBanUser = async (userId: string) => {
-    if (!adminToken) return
-    setActionLoading(userId)
-    try {
-      await banUser(userId, adminToken)
-      await fetchUsers()
-    } catch (error) {
-      console.error('Failed to ban user:', error)
-    } finally {
-      setActionLoading(null)
-    }
-  }
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return
+    const { user, type } = pendingAction
 
-  const handleUnbanUser = async (userId: string) => {
-    if (!adminToken) return
-    setActionLoading(userId)
+    setActionLoading(user.id)
     try {
-      await unbanUser(userId, adminToken)
+      if (type === 'ban') {
+        await banUser(user.id)
+        toast.success(`${user.username} has been banned`)
+      } else {
+        await unbanUser(user.id)
+        toast.success(`${user.username} has been unbanned`)
+      }
       await fetchUsers()
+      setPendingAction(null)
     } catch (error) {
-      console.error('Failed to unban user:', error)
+      console.error(`Failed to ${type} user:`, error)
+      toast.error(`Failed to ${type} ${user.username}. Please try again.`)
     } finally {
       setActionLoading(null)
     }
@@ -137,21 +136,23 @@ export default function UsersPage() {
                         <div className="flex gap-2 justify-center">
                           {user.is_banned ? (
                             <button
-                              onClick={() => handleUnbanUser(user.id)}
+                              onClick={() => setPendingAction({ user, type: 'unban' })}
                               disabled={actionLoading === user.id}
-                              className="p-2 hover:bg-success/20 rounded transition-colors text-success disabled:opacity-50"
+                              className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-success/20 rounded-md transition-colors text-success text-sm font-medium disabled:opacity-50"
                               title="Unban User"
                             >
                               <RotateCcw className="w-4 h-4" />
+                              Unban
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleBanUser(user.id)}
+                              onClick={() => setPendingAction({ user, type: 'ban' })}
                               disabled={actionLoading === user.id}
-                              className="p-2 hover:bg-error/20 rounded transition-colors text-error disabled:opacity-50"
+                              className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-error/20 rounded-md transition-colors text-error text-sm font-medium disabled:opacity-50"
                               title="Ban User"
                             >
                               <Ban className="w-4 h-4" />
+                              Ban
                             </button>
                           )}
                         </div>
@@ -164,6 +165,21 @@ export default function UsersPage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={pendingAction !== null}
+        title={pendingAction?.type === 'ban' ? 'Ban this user?' : 'Unban this user?'}
+        description={
+          pendingAction?.type === 'ban'
+            ? `${pendingAction?.user.username} will lose access to the platform immediately. You can unban them later.`
+            : `${pendingAction?.user.username} will regain access to the platform.`
+        }
+        confirmLabel={pendingAction?.type === 'ban' ? 'Ban User' : 'Unban User'}
+        isDestructive={pendingAction?.type === 'ban'}
+        isLoading={actionLoading === pendingAction?.user.id}
+        onConfirm={handleConfirmAction}
+        onCancel={() => setPendingAction(null)}
+      />
     </div>
   )
 }

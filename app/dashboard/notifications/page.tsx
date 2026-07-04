@@ -1,16 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { toast } from 'sonner'
 import { Header } from '@/components/header'
 import { authDB } from '@/lib/supabase/clients'
 import { NotificationLog } from '@/lib/types'
-import { useAuth } from '@/lib/auth-context'
 import { sendNotification } from '@/lib/api'
 import { Button } from '@/components/ui/button'
-import { Send } from 'lucide-react'
+import { Send, Loader2 } from 'lucide-react'
 
 export default function NotificationsPage() {
-  const { adminToken } = useAuth()
   const [notifications, setNotifications] = useState<NotificationLog[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSending, setIsSending] = useState(false)
@@ -39,6 +38,7 @@ export default function NotificationsPage() {
       setNotifications(data || [])
     } catch (error) {
       console.error('Failed to fetch notifications:', error)
+      toast.error('Failed to load notification history')
     } finally {
       setIsLoading(false)
     }
@@ -60,19 +60,20 @@ export default function NotificationsPage() {
 
   const handleSendNotification = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!adminToken) return
 
     setSendError('')
     setIsSending(true)
 
     try {
       const targetUserId = formData.target === 'all' ? null : formData.userId
-      await sendNotification(formData.title, formData.body, targetUserId, adminToken)
+      await sendNotification(formData.title, formData.body, targetUserId)
 
       setFormData({ title: '', body: '', target: 'all', userId: '' })
+      toast.success('Notification sent')
       await fetchNotifications()
     } catch (error) {
       setSendError('Failed to send notification. Please try again.')
+      toast.error('Failed to send notification')
       console.error(error)
     } finally {
       setIsSending(false)
@@ -161,7 +162,7 @@ export default function NotificationsPage() {
               disabled={isSending || !formData.title || !formData.body || (formData.target === 'specific' && !formData.userId)}
               className="flex items-center gap-2 px-4 py-2 bg-phonk-red hover:bg-phonk-red-dark text-text-primary rounded-lg transition-colors disabled:opacity-50"
             >
-              <Send className="w-4 h-4" />
+              {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {isSending ? 'Sending...' : 'Send Notification'}
             </Button>
           </form>
