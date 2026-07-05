@@ -143,7 +143,7 @@ export default function DashboardPage() {
         <div className="bg-bg-card border border-border-subtle rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-text-primary">Trending Tracks</h2>
-            <Link href="/tracks" className="text-phonk-red hover:underline text-sm font-medium">
+            <Link href="/dashboard/tracks" className="text-phonk-red hover:underline text-sm font-medium">
               View All
             </Link>
           </div>
@@ -181,7 +181,7 @@ export default function DashboardPage() {
         <div className="bg-bg-card border border-border-subtle rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-text-primary">Recent Users</h2>
-            <Link href="/users" className="text-phonk-red hover:underline text-sm font-medium">
+            <Link href="/dashboard/users" className="text-phonk-red hover:underline text-sm font-medium">
               View All
             </Link>
           </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { ReactNode, useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -12,6 +12,8 @@ interface ConfirmDialogProps {
   cancelLabel?: string
   isDestructive?: boolean
   isLoading?: boolean
+  confirmDisabled?: boolean
+  children?: ReactNode
   onConfirm: () => void
   onCancel: () => void
 }
@@ -24,6 +26,8 @@ export function ConfirmDialog({
   cancelLabel = 'Cancel',
   isDestructive = true,
   isLoading = false,
+  confirmDisabled = false,
+  children,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -44,7 +48,7 @@ export function ConfirmDialog({
       onClick={() => !isLoading && onCancel()}
     >
       <div
-        className="bg-bg-card border border-border-subtle rounded-lg p-6 w-full max-w-sm shadow-xl"
+        className="bg-bg-card border border-border-subtle rounded-lg p-6 w-full max-w-md shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-3 mb-4">
@@ -61,6 +65,8 @@ export function ConfirmDialog({
           </div>
         </div>
 
+        {children && <div className="mb-4">{children}</div>}
+
         <div className="flex gap-3 pt-2">
           <Button
             type="button"
@@ -73,7 +79,7 @@ export function ConfirmDialog({
           <Button
             type="button"
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || confirmDisabled}
             className={`flex-1 px-4 py-2 rounded-lg transition-colors text-text-primary flex items-center justify-center gap-2 ${
               isDestructive ? 'bg-error hover:bg-error/80' : 'bg-phonk-red hover:bg-phonk-red-dark'
             } disabled:opacity-50`}

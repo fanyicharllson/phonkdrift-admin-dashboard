@@ -14,6 +14,7 @@ export default function UsersPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [pendingAction, setPendingAction] = useState<{ user: User; type: 'ban' | 'unban' } | null>(null)
+  const [banReason, setBanReason] = useState('')
 
   useEffect(() => {
     fetchUsers()
@@ -43,7 +44,7 @@ export default function UsersPage() {
     setActionLoading(user.id)
     try {
       if (type === 'ban') {
-        await banUser(user.id)
+        await banUser(user.id, banReason.trim() || undefined)
         toast.success(`${user.username} has been banned`)
       } else {
         await unbanUser(user.id)
@@ -51,12 +52,18 @@ export default function UsersPage() {
       }
       await fetchUsers()
       setPendingAction(null)
+      setBanReason('')
     } catch (error) {
       console.error(`Failed to ${type} user:`, error)
       toast.error(`Failed to ${type} ${user.username}. Please try again.`)
     } finally {
       setActionLoading(null)
     }
+  }
+
+  const closeActionDialog = () => {
+    setPendingAction(null)
+    setBanReason('')
   }
 
   return (
@@ -178,8 +185,25 @@ export default function UsersPage() {
         isDestructive={pendingAction?.type === 'ban'}
         isLoading={actionLoading === pendingAction?.user.id}
         onConfirm={handleConfirmAction}
-        onCancel={() => setPendingAction(null)}
-      />
+        onCancel={closeActionDialog}
+      >
+        {pendingAction?.type === 'ban' && (
+          <div>
+            <label htmlFor="ban-reason" className="block text-sm font-medium text-text-primary mb-2">
+              Reason <span className="text-text-muted font-normal">(optional, visible to the user)</span>
+            </label>
+            <textarea
+              id="ban-reason"
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              placeholder="e.g. Repeated spam or abusive behavior"
+              rows={3}
+              disabled={actionLoading === pendingAction?.user.id}
+              className="w-full px-3 py-2 bg-bg-surface border border-border-subtle rounded-md text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-phonk-red disabled:opacity-50 resize-none"
+            />
+          </div>
+        )}
+      </ConfirmDialog>
     </div>
   )
 }

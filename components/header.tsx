@@ -20,7 +20,7 @@ export function Header({ title = 'Dashboard', subtitle }: HeaderProps) {
   }
 
   return (
-    <header className="h-20 border-b border-border-subtle bg-bg-card flex items-center justify-between px-6 md:ml-64">
+    <header className="h-20 border-b border-border-subtle bg-bg-card flex items-center justify-between px-4 sm:px-6 pl-16 md:pl-6">
       <div>
         <h1 className="text-2xl font-bold text-text-primary">{title}</h1>
         {subtitle && <p className="text-sm text-text-secondary mt-1">{subtitle}</p>}

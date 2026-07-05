@@ -2,12 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BarChart3, Music, Users, Bell, TrendingUp, Menu } from 'lucide-react'
-import { useState } from 'react'
+import { BarChart3, Music, Users, Bell, TrendingUp, Menu, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 export function Sidebar() {
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(true)
+  const [isOpen, setIsOpen] = useState(false)
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
@@ -17,15 +17,53 @@ export function Sidebar() {
     { href: '/dashboard/analytics', label: 'Analytics', icon: TrendingUp },
   ]
 
+  // Close on route change
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
+
+  // Lock body scroll while the mobile sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isOpen])
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen])
+
   return (
     <>
-      {/* Mobile menu button */}
+      {/* Mobile menu toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? 'Close menu' : 'Open menu'}
+        aria-expanded={isOpen}
         className="md:hidden fixed top-4 left-4 z-50 p-2 bg-bg-card border border-border-subtle rounded-lg text-phonk-red hover:bg-bg-surface transition-colors cursor-pointer"
       >
-        <Menu className="w-5 h-5" />
+        {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
+
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <button
+          aria-label="Close menu"
+          className="md:hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-30 cursor-default"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
 
       {/* Sidebar */}
       <aside
@@ -47,28 +85,19 @@ export function Sidebar() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => window.innerWidth < 768 && setIsOpen(false)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                className={`group flex items-center gap-3 px-4 py-3 rounded-lg transition-all hover:translate-x-1 ${
                   isActive
                     ? 'bg-phonk-red text-text-primary'
                     : 'text-text-secondary hover:bg-bg-card hover:text-text-primary'
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className={`w-5 h-5 transition-transform group-hover:scale-110 ${isActive ? '' : 'group-hover:text-phonk-red'}`} />
                 <span className="font-medium">{item.label}</span>
               </Link>
             )
           })}
         </nav>
       </aside>
-
-      {/* Mobile backdrop */}
-      {!isOpen && (
-        <button
-          className="md:hidden fixed inset-0 bg-black/50 z-30 cursor-default"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
     </>
   )
 }
