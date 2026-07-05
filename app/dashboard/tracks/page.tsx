@@ -184,7 +184,7 @@ export default function TracksPage() {
                     const status = getTrackStatus(track)
                     const isRowBusy = rowLoading === track.id
                     return (
-                      <tr key={track.id} className="border-b border-border-subtle hover:bg-bg-surface/50 transition-colors">
+                      <tr key={track.id} className="border-b border-border-subtle hover:bg-bg-surface transition-colors">
                         <td className="px-6 py-4">
                           {track.thumbnail_url && (
                             <img
@@ -231,7 +231,7 @@ export default function TracksPage() {
                                     <button
                                       onClick={() => handleApprove(track)}
                                       disabled={isRowBusy}
-                                      className="p-2 hover:bg-success/20 rounded transition-colors text-success disabled:opacity-50"
+                                      className="p-2 hover:bg-success/20 hover:scale-110 rounded transition-all cursor-pointer text-success disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                       title="Approve"
                                     >
                                       <Check className="w-4 h-4" />
@@ -239,7 +239,7 @@ export default function TracksPage() {
                                     <button
                                       onClick={() => handleReject(track)}
                                       disabled={isRowBusy}
-                                      className="p-2 hover:bg-error/20 rounded transition-colors text-error disabled:opacity-50"
+                                      className="p-2 hover:bg-error/20 hover:scale-110 rounded transition-all cursor-pointer text-error disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                       title="Reject"
                                     >
                                       <X className="w-4 h-4" />
@@ -250,7 +250,7 @@ export default function TracksPage() {
                                   <button
                                     onClick={() => handleFeature(track)}
                                     disabled={isRowBusy}
-                                    className={`p-2 rounded transition-colors disabled:opacity-50 ${
+                                    className={`p-2 rounded transition-all cursor-pointer hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
                                       track.is_featured
                                         ? 'bg-phonk-red/20 text-phonk-red'
                                         : 'hover:bg-phonk-red/20 text-text-secondary'
@@ -263,7 +263,7 @@ export default function TracksPage() {
                                 <button
                                   onClick={() => setDeleteTarget(track)}
                                   disabled={isRowBusy}
-                                  className="p-2 hover:bg-error/20 rounded transition-colors text-error disabled:opacity-50"
+                                  className="p-2 hover:bg-error/20 hover:scale-110 rounded transition-all cursor-pointer text-error disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                   title="Delete"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -285,7 +285,7 @@ export default function TracksPage() {
       {/* YouTube URL Modal */}
       {showModal && (
         <div
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={closeModal}
         >
           <div

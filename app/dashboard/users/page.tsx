@@ -91,7 +91,7 @@ export default function UsersPage() {
                 </thead>
                 <tbody>
                   {users.map((user) => (
-                    <tr key={user.id} className="border-b border-border-subtle hover:bg-bg-surface/50 transition-colors">
+                    <tr key={user.id} className="border-b border-border-subtle hover:bg-bg-surface transition-colors">
                       <td className="px-6 py-4">
                         {user.avatar_url ? (
                           <img
@@ -138,7 +138,7 @@ export default function UsersPage() {
                             <button
                               onClick={() => setPendingAction({ user, type: 'unban' })}
                               disabled={actionLoading === user.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-success/20 rounded-md transition-colors text-success text-sm font-medium disabled:opacity-50"
+                              className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-success/20 hover:scale-105 rounded-md transition-all cursor-pointer text-success text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                               title="Unban User"
                             >
                               <RotateCcw className="w-4 h-4" />
@@ -148,7 +148,7 @@ export default function UsersPage() {
                             <button
                               onClick={() => setPendingAction({ user, type: 'ban' })}
                               disabled={actionLoading === user.id}
-                              className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-error/20 rounded-md transition-colors text-error text-sm font-medium disabled:opacity-50"
+                              className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-error/20 hover:scale-105 rounded-md transition-all cursor-pointer text-error text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                               title="Ban User"
                             >
                               <Ban className="w-4 h-4" />

@@ -22,7 +22,7 @@ export function Sidebar() {
       {/* Mobile menu button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-bg-card border border-border-subtle rounded-lg text-phonk-red hover:bg-bg-surface transition-colors"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-bg-card border border-border-subtle rounded-lg text-phonk-red hover:bg-bg-surface transition-colors cursor-pointer"
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -65,7 +65,7 @@ export function Sidebar() {
       {/* Mobile backdrop */}
       {!isOpen && (
         <button
-          className="md:hidden fixed inset-0 bg-black/50 z-30"
+          className="md:hidden fixed inset-0 bg-black/50 z-30 cursor-default"
           onClick={() => setIsOpen(false)}
         />
       )}
